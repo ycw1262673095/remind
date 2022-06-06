@@ -445,11 +445,678 @@ px像素（Pixel）。相对长度单位。像素px是相对于显示器屏幕�
 
 
 
-# vue生命周期钩子
+# 14 vue生命周期钩子
+beforeCreate,created,beforeMount,mounted
+
+beforeCreate 创建之前  没有数据没有方法
+
+created 创建完毕  有数据有方法  但是没挂载  也就是没dom
+
+beforeMount  挂载之前  没 dom  有数据
+
+mounted  挂载后  有dom  有数据
+
+
+# 15 vue2.0的响应式原理  （简练）主要通过发布订阅 Object.defineProperty  给getter 收集依赖  我们去获取的时候就会去通知他的依赖更新  后面就是异步更新
+
+
+第一步  数据劫持  也就是数据拦截
+
+我们通过 Object.defineProperty  来把他每一个属性转成 setter getter   这样就能触发setter   就知道什么属性被改了
+
+第二 个是依赖收集  我们在渲染视图的时候 要将观察者(watcher)和具体的属性结合起来 通过发布订阅的方式  将数据的改变更加精准的去更新视图
+
+收集依赖的过程 
+ 挂载前 对data对象进行遍历   进行对应的下载getter 在getter里面维护了一个 用来收集依赖的对象
+ 挂载的时候 template/el 把他转成这个 render函数   第二 创建了一个updateComponent的函数 调用 render函数 
+ 给每一个组件 或者vue实例 new一个watcher 这个watcher 创建updateComponent的函数
+ 挂载之后 我们的用户去更新数据的时候触发watcher   更新视图
+ 收集依赖过程放在 new watcher 的时候  在构造器的内部会调用一次 render函数 是由template/el编译过来的 在里面访问data属性  触发getter   在getter 内部 完成依赖收集
+
+
+ 重复收集 怎么办  调用 watcher的时候会加入唯一id  在添加依赖的时候会先判断 这个id有没有  就可以避免重复的收集
+Object.defineProperty  有三个参数 
+
+object	需定义或修改属性的对象
+property	需定义或修改的属性
+descriptor	属性的描述符，包含存取描述符和数据描述符，以对象方式传入。
+
+let obj = {}
+Object.defineProperty(obj, 'name', {
+	value: 'alice'
+});
+obj.name ='tom'
+console.log(obj.name)//alice
+
+
+# 16 vue生命周期
+
+beforeCreate,created,beforeMount,mounted,beforeUpdate,updated,beforeDestroy,destroyed
+
+beforeCreate 创建之前  没有数据没有方法
+
+created 创建完毕  有数据有方法  但是没挂载  也就是没dom
+
+beforeMount  挂载之前  没 dom  有数据
+
+mounted  挂载后  有dom  有数据  一般是在这里进行:开启定时器、发送网络请求、订阅消息、绑定自定义事件
+
+this.$nextTick(()=>{
+  //会在dom更新之后调用
+})
+
+beforeUpdate  在dom更新前调用  数据是新的  页面是旧的
+
+updated  在dom更新后调用 数据是新的  页面也是新的
+
+
+beforeDestroy 实例销毁前调用 这一步实例完全可用 方法 指令什么的都可用调用 一般在这里:关闭定时器、取消订阅消息、解绑自定义事件
+
+destroyed 实例销毁后 方法 指令什么的都不能调用
 
 
 
-# vue2.0的响应式原理
+# 17 vue组件间的参数传递  桥接文件
+
+
+组件中 通信  如果是两个子组件之间的通信  就需要 创建桥接文件   用订阅发布功能
+
+桥接文件 
+
+import Vue from 'vue'
+export default new Vue()
+
+
+$emit('事件名',fn) ----触发自定义事件
+<button @click="sendStudentName">把学生名给App</button>
+sendStudentName() {
+  // 触发Student组件实例身上的atguigu事件
+  this.$emit("atguigu", this.name, 66, 58, 85);
+  // this.$emit("demo");
+  // this.$emit("click");
+},
+
+unbind() {
+  this.$off("atguigu"); //一个事件解绑一个自定义事件
+  // this.$off(["atguigu", "demo"]); //解绑多个自定义事件
+  // this.$off(); //解绑所有自定义事件
+},
 
 
 
+$on('事件名',fn)-----添加并监听自定义事件  
+
+<Student ref="student" @click.native="show"></Student>
+
+getStudentName(name, ...params) {
+  console.log("App收到了学生名", name, params);
+  this.studentName = name;
+},
+
+mounted() {
+  this.$refs.student.$on("atguigu", this.getStudentName);
+},
+ 
+
+# 18 less的用法
+
+需要下载 less依赖  
+<style lang="less" scoped>
+
+</style>
+
+
+如果直接往下写就相当于是后代
+less写法
+ul{
+    width: 100%;
+    li {
+         width: 100%;
+         text-align: center;
+         height: 50px;
+         line-height: 50px;
+         border-bottom: 1px solid gray;
+         border-right: 1px solid gray;
+         a{
+           color: black;
+         }
+    }
+}
+相当于
+ul{
+    width: 100%;
+}
+ul li{
+        width: 100%;
+        text-align: center;
+        height: 50px;
+        line-height: 50px;
+        border-bottom: 1px solid gray;
+        border-right: 1px solid gray;
+}
+ul li a {
+    color: black;
+}
+
+从现有的样式中添加属性
+
+less写法
+.oneColor(){
+  background-color: red;
+  border:1px solid red;
+  color: red;
+}
+
+#item {
+    .oneColor;
+    font-size: 20px;
+}
+#menu {
+    .oneColor;
+    line-height: 50px;
+}
+
+
+相当于
+
+.oneColor(){
+  background-color: red;
+  border:1px solid red;
+  color: red;
+}
+#item {
+    background-color: red;
+    border:1px solid red;
+    color: red;
+    font-size: 20px;
+}
+#menu {
+    background-color: red;
+    border:1px solid red;
+    color: red;
+    line-height: 50px;
+}
+
+带参数
+less 写法
+
+.oneColor(@color:#0094ff){
+      background-color: @color;
+      border:1px solid @color;
+      color: @color;
+}
+
+/* 带参数的引用 */
+#item {
+  .oneColor(#fff);
+}
+/* 不带参数的引用（会采用默认值） */
+#menu {
+  .oneColor();
+}
+
+相当于
+
+/* 由于带有参数，会修改内部的值，变为yellow */
+#item {
+      background-color: #ffffff;
+      border:1px solid #ffffff;
+      color: #ffffff;
+}
+#menu {
+      background-color: #0094ff;
+      border:1px solid #0094ff;
+      color: #0094ff;
+}
+
+嵌套  
+
+less写法
+
+.main{
+     width: 100%;
+     height: 40px;
+     /* 利用&符号来替代元素名 */
+     &:hover{
+         height: 90px;
+     }
+     &::before {
+        content: '';
+        position: absolute;
+        width: 20px;
+        height: 20px;
+        background-color: red;
+        border-radius: 10px;
+    }
+}
+
+
+相当于
+
+.main {
+     width: 100%;
+     height: 40px;
+}
+.main:hover {
+    height: 90px;
+}
+.main::before {
+    content: '';
+    position: absolute;
+    width: 20px;
+    height: 20px;
+    background-color: red;
+    border-radius: 10px;
+}
+
+
+加减乘除
+
+less写法
+/* 定义一个变量 */
+@width: 100px;
+.plus {
+    /* 运算时，可以不用加上单位，最终将得到宽度加10 */
+    width: @width+10;
+}
+
+相当于
+
+.plus {
+    width: 110px;
+}
+
+定义变量的格式 
+
+less写法
+
+@jdRed:rgba(201,21,35,0.8);
+
+/* 设置了body，h3，ul的背景颜色均为一样 */
+body {
+  background-color: @jdRed;
+}
+h3 {
+  background-color: @jdRed;
+}
+ul {
+  background-color: @jdRed;
+}
+
+# 19 scoped
+
+
+在样式中使用  如果在单个组件中使用的化 别的组件就影响
+
+vue组件中的style标签标有scoped属性时表明style里的css样式只适用于当前组件元素
+
+不会去影响其他的组件
+
+缺点
+
+scoped CSS里每个样式的权重加重了，理论上我们可以修改某一个样式，但是却需要更高的权重去覆盖这个样式；
+无论父组件样式的权重多大，也可能无法修改子组件的样式，除了子组件的根节点。
+使用标签选择器时scoped会严重降低性能，而使用class或id则不会。
+
+
+
+# 20 Promise用法
+  
+  promise.all  要等所有all()参数里的promise方法执行完成了 才会执行.then里面的方法  返回的是一个数组
+
+  promise.race  有一个race的参数promise方法执行完成了 race方法就结束了  其他异步方法继续执行
+
+
+
+
+# 21 then()用法
+then()方法是异步执行。
+
+意思是：就是当.then()前的方法执行完后再执行then()内部的程序，这样就避免了，数据没获取到等的问题。
+
+
+
+# 22 promise 和 async、await的区别
+async函数是一种兼顾了基于Promise的实现和「生成器」（也就是ES6的新特性Generator）的同步写法。
+
+
+在 定义一个函数前面添加async这个函数的返回值 他会返回一个promise   请求前面调用 await 只会获取成功  如果不成功他下面的代码也不会执行   try catch 获取失败 catch 捕捉失败的状态
+
+let fs = require('fs').promises  //让fs里方法都Promise化，不用自己转
+//先看async 函数怎么写
+async function read(){  
+     let path = awit fs.readFile('a.txt', 'utf-8') 
+     let result = awit fs.readFile(path, 'utf-8')  
+     return result
+}
+let res = read() //res是一个Promise对象
+res.then(data => {    //data就是成功后最后的结果 
+     console.log(data)
+})
+
+
+# 23 js三大特性
+
+
+
+
+# 23 keep-alive
+
+
+
+# 24在发送请求拿数据的时候
+
+一般会写在create构造函数里面 进入页面发送请求  也可以写在mouted
+
+
+# 25v-for
+
+v-for 中一般会写到key key的作用是为了更好的渲染 在数据变化后，虚拟dom会进行比对，没有key的话，就会重新全部选安然，有的话，就单独对那个操作，其他不用重新渲染，就是提高复用
+
+1.vue中列表循环需加:key="唯一标识" 唯一标识尽量是item里面id等，因为vue组件高度复用增加Key可以标识组件的唯一性，为了更好地区别各个组件 key的作用主要是为了高效的更新虚拟DOM。
+
+2.key主要用来做dom diff算法用的，diff算法是同级比较，比较当前标签上的key还有它当前的标签名，如果key和标签名都一样时只是做了一个移动的操作，不会重新创建元素和删除元素。
+
+3.没有key的时候默认使用的是“就地复用”策略。如果数据项的顺序被改变，Vue不是移动Dom元素来匹配数据项的改变，而是简单复用原来位置的每个元素。如果删除第一个元素，在进行比较时发现标签一样值不一样时，就会复用之前的位置，将新值直接放到该位置，以此类推，最后多出一个就会把最后一个删除掉。
+
+4.尽量不要使用索引值index作key值，一定要用唯一标识的值，如id等。因为若用数组索引index为key，当向数组中指定位置插入一个新元素后，因为这时候会重新更新index索引，对应着后面的虚拟DOM的key值全部更新了，这个时候还是会做不必要的更新，就像没有加key一样，因此index虽然能够解决key不冲突的问题，但是并不能解决复用的情况。如果是静态数据，用索引号index做key值是没有问题的。
+
+5.标签名一样，key一样这时候就会就地复用，如果标签名不一样，key一样不会复用。
+
+
+
+# 26 原型链
+
+我们创建的每个函数都有一个==prototype==（原型）属性，prototype属性指向原型对象。通过该函数创建的实例对象会共享原型对象上的所有属性和方法。
+
+
+用我们自己的话来说原型链 
+
+如果有一个函数 他创建了一个实例化对象  这个对象就有他这个函数的prototype的所有属性和方法
+const a = new Person();
+
+
+ 并且  a.__proto__ ===Person.prototype   所有对象都会有隐式原型(__proto__) 函数既有隐式原型 又有显式原型(prototype)   原型链也可以这么表示  
+   a.__proto__ ===Person.prototype 且 
+   a.__proto__.__proto__ ===Person.prototype.__proto__ ===Object.prototype
+
+Object在往上就没有了 
+ 同时我们可以对原型指向进行改变 比如
+
+  Person.prototype  = new Animal()   
+  
+  var p = new Person()
+  
+  p中就可以用到Animal中 的属性和方法
+  
+
+ 在constructor中返回的结果是构造函数
+ 比如  a.__proto__.constructor 返回的就是 Person的构造函数
+
+ 
+
+
+
+# 27列表过滤  filter indexOf(this.keyword) !== -1
+
+  filPerons() {
+                return this.persons.filter((p) => {
+                    // 关键字不存在就过滤   输入keyword 判断 不等于-1 也就是 不存在这个关键字的字找出来进行过滤
+                    return p.name.indexOf(this.keyword) !== -1
+
+                })
+            }
+
+# 28升降序 sort
+
+
+ //判断一下是否需要排序
+  // 如果返回的是  正数就不变  负数 就是后面的放到前面去
+  if (this.sortType) {
+      arr.sort((p1, p2) => {
+          return this.sortType === 1 ? p2.age - p1.age : p1.age - p2.age
+      })
+  }
+
+
+
+# 29更新数组对象的内容   splice 三个参数
+ 
+  // index:数组开始下标       
+
+  // len: 替换/删除的长度       
+
+  // item:替换的值，删除操作的话 item为空
+  this.persons.splice(0, 1, {
+      id: '001',
+      name: '马老师',
+      age: 50,
+      sex: '男'
+  })
+
+
+
+  # 30 css 三大特性
+
+
+
+  # 31 全局的过滤器 Vue.filter(name,callback)
+   //全局的过滤器
+    Vue.filter('mySlice', function (value) {
+        return value.slice(0, 4)
+    })             
+
+
+ # 32   v-cloak指令(没有值) :
+1.本质是一个特殊属性，Vue实例创建完毕并接管容器后，会删掉v- cloak属性。
+2.使用css配合v-cloak可以解决网速慢时页面展示出{kKxx}}的问题。
+
+
+ # 33 v-html指令:
+1.作用:向指定节点中渲染包含html结构的内容。
+2.与插值语法的区别:
+(1).v-html会替换掉节点中所有的内容，{{xx}}则不会。
+(2).v- html可以识别htm1结构。
+3.严重注意: v-html有安全性问题! ! ! !
+(1).在网站上动态渲染任意HTML是非常危险的，容易导致XSS攻击。
+(2).-定要在可信的内容上使用v-html,永不要用在用户提交的内容上!
+
+
+# 34 v-once指令:
+1.v-once所在节点在初次动态渲染后，就视为静态内容了。
+2.以后数据的改变不会引起v- once所在结构的更新，可以用于优化性能
+
+
+# 35 v-pre
+
+v-pre指令是填充原始信息，在Vue中跳过了表达式的编译过程，显示原始数据。  也就是说
+
+  <div id="root">
+        <h2 v-pre>Vue其实很简单</h2>
+
+        <h2 v-pre>当前n的值是：{{n}}</h2>
+        <button v-pre @click="n++">点我n+1</button>
+    </div>
+
+    当前n的值是：{{n}}  中的 {{n}}  不会被编译 在页面还是显示的{{n}}
+
+# 36
+v-bind ; 单向绑定解析表达式，可简写为:XXX
+
+v-model :双向数据绑定
+
+V- for;遍历数组/对象/字符串
+
+v-on:绑定事件监听，可简写为@
+
+v-if:条件渲染(动态控制节点是否存存在)
+
+v-else;条件渲染(动态控制节点是否存存在)
+
+v-show : 条件渲染(动态控制节点是否展示)
+
+v-text指令:
+
+1.作用:向其所在的节点中渲染文本内容。
+2.与插值语法的区别: v-text会 替换掉节点中的内容，{{xx}则不会。
+
+
+# 36 自定义指令 
+
+定义语法:
+(1).局部指令:
+new Vue({
+  directives:{指令名，配置对象}
+  )}
+  或者
+  new Vue({
+  directives:{指令名，回调函数}
+  )}
+(2).全局指令:
+Vue. directive(指令名，配置对象)或Vue .directive(指令名,回调函数)
+
+二、配置对象中常用的3个回调:
+(1).bind:指令与元素成功绑定时调用。
+(2).inserted:指令所在元素被插入页面时调用。
+(3).update:指令所在模板结构被重新解析时调用。
+三、备注:
+1.指令定义时不加V-，但使用时要加v-;
+2.指令名如果是多个单词，要使用kebab-case命名方式，不要用camelCase命名。
+
+
+
+
+//big函数何时会被调用?  1.指令与元素成功绑定时(一上来) 2.指令所在的模板被重新解析时
+
+<h2>当前n的值是： <span v-text="n"> </span></h2>
+<h2>放大十倍的n值是： <span v-big="n"> </span></h2>
+<h2>放大十倍的n值是： <span v-big-number="n"> </span></h2>
+<button @click="n++">点我n+1</button>
+<br />
+<input type="text" v-fbind:value="n" autofocus>
+
+
+
+directives: {
+    //element是当前的dom节点  binding是对象 这里绑定的是n
+    'big-number'(element, binding) {
+        // console.log('big')
+        element.innerText = binding.value * 10
+    },
+    big(element, binding) {
+        console.log('big', this); // 此处的this是window
+        // console.log('big')
+        element.innerText = binding.value * 10
+    },
+    fbind: {
+        //指令与元素成功绑定时(一上来)
+        bind(element, binding) {
+            element.value = binding.value
+        },
+        //指令所在元素被插入时
+        inserted(element, binding) {
+            element.focus()
+        },
+        //指令所在的模板被重新解析时
+        update(element, binding) {
+            element.value = binding.value
+            element.focus()
+        }
+    }
+
+}
+
+
+
+# 36 订阅和发布
+
+import pubsub from "pubsub-js";  引入依赖
+
+//订阅
+ this.pubid = pubsub.subscribe("hello", (msgname, data) => {
+      console.log(this);
+      // console.log("有人发布了hello消息,hello消息的回调执行了", msgname, data);
+    });
+
+
+
+//发布
+ sendStudentName() {
+      pubsub.publish("hello", 666);
+    },
+
+
+# 37    @click.native 是子组件点击后触发  绑定的事件
+
+
+
+# 38 vuex中mutations和actions的区别
+
+action  提交异步操作  也可以用 来提交mutation    比如promise和async/await 等异步操作 
+
+mutataion 提交同步操作   也可以异步但建议使用action 因为 vue官方插件devtools你用 了mutation异步的话你观察不到值的变化所以建议action写异步
+
+
+
+# 怎么水平居中
+
+
+
+# 项目  
+
+项目使用vuex 来实现的左侧折叠
+
+commit  同步操作 将数据提交给 mutation
+
+axios 
+1.是promise的api 避免回调地狱 
+
+2.请求和响应前做一个拦截
+
+3.支持防御XSRF的攻击
+
+
+// map返回一个新数组 返回的是后面函数的值
+            data: order.data.map((item) => item[key]),
+
+//    splice数组删除
+closeTag(state,val){
+  const result = state.tabsList.findIndex(item=>item.name === val.name)
+
+  state.tabsList.splice(result,1)
+},
+
+// mapMutations 和commit 都可以将mutation中的数据注入进组件
+...mapMutations({
+  close: "closeTag", //别名
+}),
+
+
+ delUser(row) {
+      // 通知栏组件 $confirm
+      this.$confirm("此操作将永久删除该组件，是否继续?", "提示", {
+        confirmButtonText: "确认",
+        cancelButtonText: "取消",
+        type: "warning",
+      }).then(() => {
+        const id = row.id;
+        this.$http
+          .post("user/del", {
+            params: { id },
+          })
+          .then(() => {
+            this.$message({
+              type: "success",
+              message: "删除成功",
+            });
+            this.getList();
+          });
+      });
+    },
+
+
+
+    //路由的动态添加
+            menuArray.forEach(item => {
+                router.addRoute('Main',item)
+            })
